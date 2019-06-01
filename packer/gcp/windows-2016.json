@@ -1,0 +1,62 @@
+{
+  "variables": {
+    "google_application_credential": "{{env `GOOGLE_APPLICATION_CREDENTIAL`}}",
+    "project_id":     "{{env `GCP_PROJECT`}}",
+    "gcp_region":     "{{env `GCP_REGION`}}",
+    "region":         "us-west-2",
+    "customer_name":  "Test",
+    "dept":           "sa",
+    "machine_type":   "n1-standard-4"
+  },
+  "builders": [
+    {
+      "type":                "googlecompute",
+      "account_file":        "{{user `google_application_credential`}}",
+      "project_id":          "chef-sa",
+      "zone":                "us-west2-a",
+      "source_image_family": "windows-2016-for-containers",
+      "disk_size":           "100",
+      "disk_type":           "pd-ssd",
+      "machine_type":        "{{user `machine_type`}}",
+      "communicator": "winrm",
+      "winrm_username": "packer_user",
+      "winrm_insecure": true,
+      "winrm_use_ssl": true,
+      "metadata": {
+        "windows-startup-script-cmd": "winrm quickconfig -quiet & net user /add packer_user & net localgroup administrators packer_user /add & winrm set winrm/config/service/auth @{Basic=\"true\"}"
+      },
+      "image_name": "win-2016-hab-ws-{{timestamp}}",
+      "image_family": "win-2016-hab-ws",
+      "state_timeout": "10m"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "powershell",
+      "elevated_user": "packer_user",
+      "elevated_password": "{{.WinRMPassword}}",
+      "inline": [
+        "$Key = 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System'",
+        "$Setting = 'LocalAccountTokenFilterPolicy'",
+        "Set-ItemProperty -Path $Key -Name $Setting -Value 1 -Force",
+        "Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope LocalMachine",
+        "cmd.exe /c net user Administrator RL9@T40BTmXh",
+        "cmd.exe /c net user administrator /active:yes",
+        "cmd.exe /c net user hab ch3fh@b1! /add /LOGONPASSWORDCHG:NO",
+        "cmd.exe /c net localgroup Administrators /add hab",
+        "cmd.exe /c wmic useraccount where \"name='hab'\" set PasswordExpires=FALSE",
+        "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))",
+        "C:/ProgramData/chocolatey/choco install git -y",
+        "C:/ProgramData/chocolatey/choco install GoogleChrome -y",
+        "C:/ProgramData/chocolatey/choco install VisualStudioCode -y",
+        "C:/ProgramData/chocolatey/choco install chef-workstation -y",
+        "C:/ProgramData/chocolatey/choco install poshgit -y",
+        "C:/ProgramData/chocolatey/choco install cmder -y",
+        "docker pull habitat-docker-registry.bintray.io/win-studio-x86_64-windows",
+        "New-NetFirewallRule -DisplayName \"Habitat TCP\" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 9631,9638",
+        "New-NetFirewallRule -DisplayName \"Habitat UDP\" -Direction Inbound -Action Allow -Protocol UDP -LocalPort 9638",
+        "C:/windows/system32/sysprep/sysprep.exe /generalize /quiet /shutdown"
+      ]
+    }
+  ]
+}
