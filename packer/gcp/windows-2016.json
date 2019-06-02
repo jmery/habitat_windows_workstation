@@ -14,7 +14,7 @@
       "account_file":        "{{user `google_application_credential`}}",
       "project_id":          "chef-sa",
       "zone":                "us-west2-a",
-      "source_image_family": "windows-2016-for-containers",
+      "source_image_family": "windows-2016",
       "disk_size":           "100",
       "disk_type":           "pd-ssd",
       "machine_type":        "{{user `machine_type`}}",
@@ -45,6 +45,20 @@
         "cmd.exe /c net user hab ch3fh@b1! /add /LOGONPASSWORDCHG:NO",
         "cmd.exe /c net localgroup Administrators /add hab",
         "cmd.exe /c wmic useraccount where \"name='hab'\" set PasswordExpires=FALSE",
+        "Install-Module -Name DockerMsftProvider -Repository PSGallery -Force",
+        "Install-Package -Name docker -ProviderName DockerMsftProvider",
+        "netsh netkvm setparam 0 *RscIPv4 0",
+        "reg add HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters /v DisabledComponents /t REG_DWORD /d 0x0 /f"
+      ]
+    },
+    {
+      "type": "windows-restart"
+    },
+    {
+      "type": "powershell",
+      "elevated_user": "packer_user",
+      "elevated_password": "{{.WinRMPassword}}",
+      "inline": [
         "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))",
         "C:/ProgramData/chocolatey/choco install git -y",
         "C:/ProgramData/chocolatey/choco install GoogleChrome -y",

@@ -5,7 +5,7 @@ resource "google_compute_address" "hab_ws_ext_ip" {
 
 resource "google_dns_record_set" "hab_ws_dns" {
   project = "${data.google_dns_managed_zone.chef-demo.project}"
-  name = "${var.hab_ws_hostname}-${var.label_customer}-${var.hab_ws_count}.${data.google_dns_managed_zone.chef-demo.dns_name}"
+  name = "${local.hostname}.${data.google_dns_managed_zone.chef-demo.dns_name}"
   managed_zone = "${data.google_dns_managed_zone.chef-demo.name}"
   type = "A"
   ttl  = 300
@@ -14,7 +14,7 @@ resource "google_dns_record_set" "hab_ws_dns" {
 }
 
 resource "google_compute_instance" "hab_ws" {
-  name         = "${var.hab_ws_hostname}-${var.hab_ws_count}-${random_id.instance_id.hex}"
+  name         = "${local.hostname}-${random_id.instance_id.hex}"
   hostname     = "${local.fqdn}"
   machine_type = "${var.hab_ws_machine_type}"
   zone         = "${data.google_compute_zones.available.names[0]}" // Default to first available zone
@@ -34,7 +34,7 @@ resource "google_compute_instance" "hab_ws" {
     initialize_params {
       type = "pd-ssd"
       size = 100
-      image = "win-2019-hab-ws"
+      image = "win-2016-hab-ws"
     }
   }
 

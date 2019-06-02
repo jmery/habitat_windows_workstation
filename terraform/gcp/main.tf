@@ -17,8 +17,10 @@ data "google_dns_managed_zone" "chef-demo" {
 }
 
 locals {
+  // Set hostname
+  hostname = "${var.hab_ws_hostname}-${var.label_customer}-${var.hab_ws_count}"
   // GCP returns a trailing '.' from the managed zone data that needs to be stripped
-  fqdn = "${var.hab_ws_hostname}.${substr(data.google_dns_managed_zone.chef-demo.dns_name, 0, length(data.google_dns_managed_zone.chef-demo.dns_name) - 1)}"
+  fqdn = "${local.hostname}.${substr(data.google_dns_managed_zone.chef-demo.dns_name, 0, length(data.google_dns_managed_zone.chef-demo.dns_name) - 1)}"
 }
 
 resource "google_compute_network" "hab_ws_net" {
